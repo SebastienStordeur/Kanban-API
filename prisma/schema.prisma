@@ -11,7 +11,38 @@ datasource db {
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
   password String
+  boards   Board[]
+}
+
+model Board {
+  id      Int      @id @default(autoincrement())
+  title   String
+  User    User     @relation(fields: [userId], references: [id])
+  userId  Int
+  columns Column[]
+}
+
+model Column {
+  id      Int    @id @default(autoincrement())
+  column  String
+  Board   Board? @relation(fields: [boardId], references: [id])
+  boardId Int?
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String
+  descritpion String
+  subtasks    SubTask[]
+}
+
+model SubTask {
+  id          Int     @id @default(autoincrement())
+  title       String
+  isCompleted Boolean
+  Task        Task?   @relation(fields: [taskId], references: [id])
+  taskId      Int?
 }
