@@ -1,5 +1,5 @@
 const express = require("express");
-import { createBoard } from "./boards.controllers";
+const { createBoard } = require("./boards.controllers");
 
 const boardsRouter = express.Router();
 
