@@ -31,6 +31,7 @@ model Column {
   column  String
   Board   Board? @relation(fields: [boardId], references: [id])
   boardId Int?
+  tasks   Task[]
 }
 
 model Task {
@@ -40,6 +41,8 @@ model Task {
   subtasks    SubTask[]
   Board       Board?    @relation(fields: [boardId], references: [id])
   boardId     Int?
+  Column      Column?   @relation(fields: [columnId], references: [id])
+  columnId    Int?
 }
 
 model SubTask {

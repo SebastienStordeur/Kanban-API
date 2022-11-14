@@ -59,12 +59,22 @@ async function getBoard(req, res) {
             boardId,
           },
         })
-        .then((tasks) => {
-          return res.status(200).json({
-            id: response.id,
-            title: response.title,
-            tasks,
-          });
+        .then(async (tasks) => {
+          await prisma.column
+            .findMany({
+              where: {
+                boardId,
+              },
+            })
+            .then((columns) => {
+              console.log(columns);
+              return res.status(200).json({
+                id: response.id,
+                title: response.title,
+                columns,
+                tasks,
+              });
+            });
         });
     })
     .catch((err) => console.log(err));
