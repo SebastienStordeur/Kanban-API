@@ -23,6 +23,7 @@ model Board {
   User    User     @relation(fields: [userId], references: [id])
   userId  Int
   columns Column[]
+  tasks   Task[]
 }
 
 model Column {
@@ -37,6 +38,8 @@ model Task {
   title       String
   descritpion String
   subtasks    SubTask[]
+  Board       Board?    @relation(fields: [boardId], references: [id])
+  boardId     Int?
 }
 
 model SubTask {

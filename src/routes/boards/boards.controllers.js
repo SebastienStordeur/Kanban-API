@@ -7,8 +7,6 @@ async function createBoard(req, res) {
     return res.status(201).json({ message: "Colums detected" });
   } else {
     //need to  manage the case where colums are included in the request
-
-    console.log(req.body);
     await prisma.board
       .create({
         data: {
@@ -27,12 +25,14 @@ async function createBoard(req, res) {
 
 async function getBoards(req, res) {
   const prisma = new PrismaClient();
+  console.log("req", req.query);
+  //need to parse the userId if it's a string
 
   //get all board from specific user
   await prisma.board
     .findMany({
       where: {
-        userId: 11,
+        userId: JSON.parse(req.query.userId),
       },
     })
     .then((response) => {
@@ -44,16 +44,28 @@ async function getBoards(req, res) {
 
 async function getBoard(req, res) {
   const prisma = new PrismaClient();
+  const boardId = JSON.parse(req.params.id);
 
   await prisma.board
     .findUnique({
       where: {
-        id: 11,
+        id: boardId,
       },
     })
-    .then((response) => {
-      console.log(response);
-      return res.status(200).json(response);
+    .then(async (response) => {
+      await prisma.task
+        .findMany({
+          where: {
+            boardId,
+          },
+        })
+        .then((tasks) => {
+          return res.status(200).json({
+            id: response.id,
+            title: response.title,
+            tasks,
+          });
+        });
     })
     .catch((err) => console.log(err));
 }
