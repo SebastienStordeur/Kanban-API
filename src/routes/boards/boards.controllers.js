@@ -11,7 +11,7 @@ async function createBoard(req, res) {
       .create({
         data: {
           title: req.body.title,
-          userId: 11,
+          userId: 13,
         },
       })
       .then(() => {
@@ -26,6 +26,7 @@ async function createBoard(req, res) {
 async function getBoards(req, res) {
   const prisma = new PrismaClient();
   console.log("req", req.query);
+
   //need to parse the userId if it's a string
 
   //get all board from specific user
@@ -80,4 +81,20 @@ async function getBoard(req, res) {
     .catch((err) => console.log(err));
 }
 
-module.exports = { createBoard, getBoards, getBoard };
+async function deleteBoard(req, res) {
+  const prisma = new PrismaClient();
+  const boardId = JSON.parse(req.params.id);
+
+  await prisma.board
+    .delete({
+      where: { id: boardId },
+    })
+    .then(() => {
+      res.status(200).json({ message: "Board successfully deleted" });
+    })
+    .catch((err) => {
+      res.status(400).json({ err, message: "We couldn't delete this board, try again later" });
+    });
+}
+
+module.exports = { createBoard, getBoards, getBoard, deleteBoard };
