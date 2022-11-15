@@ -1,28 +1,33 @@
 const { PrismaClient } = require("@prisma/client");
 const { getId } = require("../../services/authService");
+const prisma = new PrismaClient();
 
 async function createBoard(req, res) {
-  const prisma = new PrismaClient();
+  try {
+    const authServiceResponse = await getId(req);
+    const userId = authServiceResponse.id;
 
-  //need to  manage the case where colums are included in the request
-  await prisma.board
-    .create({
-      data: {
-        title: req.body.title,
-        userId: 13,
-      },
-    })
-    .then(() => {
-      return res.status(201).json({ message: "Board created" });
-    })
-    .catch((err) => {
-      return res.status(400).json({ message: "Board cant be created" + err });
-    });
+    //add request for columns
+
+    await prisma.board
+      .create({
+        data: {
+          title: req.body.title,
+          userId: userId,
+        },
+      })
+      .then(() => {
+        return res.status(201).json({ message: "Board created" });
+      })
+      .catch((err) => {
+        return res.status(400).json({ message: "Board cant be created" + err });
+      });
+  } catch (err) {
+    throw new Error(err);
+  }
 }
 
 async function getBoards(req, res) {
-  const prisma = new PrismaClient();
-
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
@@ -43,45 +48,43 @@ async function getBoards(req, res) {
 }
 
 async function getBoard(req, res) {
-  const prisma = new PrismaClient();
-  const boardId = JSON.parse(req.params.id);
+  try {
+    const authServiceResponse = await getId(req);
+    const userId = authServiceResponse.id;
+    const boardId = JSON.parse(req.params.id);
 
-  await prisma.board
-    .findUnique({
-      where: {
-        id: boardId,
-      },
-    })
-    .then(async (response) => {
-      await prisma.task
-        .findMany({
-          where: {
-            boardId,
+    await prisma.board
+      .findUnique({
+        where: { id: boardId },
+        include: {
+          columns: {
+            select: {
+              id: true,
+              column: true,
+            },
           },
-        })
-        .then(async (tasks) => {
-          await prisma.column
-            .findMany({
-              where: {
-                boardId,
+          tasks: {
+            include: {
+              subtasks: {
+                select: { id: true, title: true, isCompleted: true },
               },
-            })
-            .then((columns) => {
-              console.log(columns);
-              return res.status(200).json({
-                id: response.id,
-                title: response.title,
-                columns,
-                tasks,
-              });
-            });
-        });
-    })
-    .catch((err) => console.log(err));
+            },
+          },
+        },
+      })
+      .then((response) => res.status(200).json(response))
+      .catch((err) => res.status(500).json({ msg: "error", err }));
+  } catch (err) {
+    throw new Error(err);
+  }
+  /*   
+        if (userId !== board.userId) {
+          return res.status(403).json({ status: 403, message: "Forbidden access" });
+        }
+  } */
 }
 
 async function deleteBoard(req, res) {
-  const prisma = new PrismaClient();
   const boardId = JSON.parse(req.params.id);
 
   await prisma.board

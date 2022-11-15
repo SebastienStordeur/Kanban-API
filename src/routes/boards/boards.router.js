@@ -4,7 +4,7 @@ const { createBoard, getBoards, getBoard, deleteBoard } = require("./boards.cont
 const boardsRouter = express.Router();
 const auth = require("../../middleware/Auth");
 
-boardsRouter.post("/", createBoard);
+boardsRouter.post("/", auth, createBoard);
 boardsRouter.get("/", auth, getBoards);
 boardsRouter.get("/:id", auth, getBoard);
 boardsRouter.delete("/:id", auth, deleteBoard);
