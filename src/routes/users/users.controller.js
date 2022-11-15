@@ -50,14 +50,31 @@ async function httpLogin(req, res) {
         refreshToken: "Un autre token",
       };
       const token = jwt.sign(payload, process.env.SECRET_KEY, { expiresIn: "1d" });
-      return res.status(200).json({ id: user.id, token, refreshToken: "Un autre token" });
+      return res.status(200).json({ id: user.id, token, refreshToken: "Un autre token", status: 200 });
     }
   } else {
     return res.status(400).json({ error: "User doesn't exist" });
   }
 }
 
+async function httpGetProfile(req, res) {
+  const prisma = new PrismaClient();
+
+  const token = req.headers.authorization.split(" ")[1];
+  const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+  const userId = decodedToken.userId;
+
+  await prisma.user
+    .findUnique({
+      where: { id: userId },
+    })
+    .then((response) => {
+      res.status(200).json(token);
+    });
+}
+
 module.exports = {
   httpSignup,
   httpLogin,
+  httpGetProfile,
 };
