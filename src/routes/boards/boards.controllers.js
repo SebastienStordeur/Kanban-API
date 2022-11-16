@@ -72,31 +72,42 @@ async function getBoard(req, res) {
           },
         },
       })
-      .then((response) => res.status(200).json(response))
-      .catch((err) => res.status(500).json({ msg: "error", err }));
+      .then((response) => {
+        if (userId !== response.userId) {
+          return res.status(403).json({ status: 403, message: "Forbidden access" });
+        }
+        return res.status(200).json(response);
+      })
+      .catch((err) => {
+        return res.status(500).json({ msg: "error", err });
+      });
   } catch (err) {
     throw new Error(err);
   }
-  /*   
-        if (userId !== board.userId) {
-          return res.status(403).json({ status: 403, message: "Forbidden access" });
-        }
-  } */
 }
 
 async function deleteBoard(req, res) {
   const boardId = JSON.parse(req.params.id);
+  const authServiceResponse = await getId(req);
+  const userId = authServiceResponse.id;
 
-  await prisma.board
-    .delete({
-      where: { id: boardId },
-    })
-    .then(() => {
-      res.status(200).json({ message: "Board successfully deleted" });
-    })
-    .catch((err) => {
-      res.status(400).json({ err, message: "We couldn't delete this board, try again later" });
-    });
+  console.log(req.body);
+
+  //need to check if the board is owned by the user
+  try {
+    await prisma.board
+      .delete({
+        where: { id: boardId },
+      })
+      .then(() => {
+        res.status(200).json({ message: "Board successfully deleted" });
+      })
+      .catch((err) => {
+        res.status(400).json({ err, message: "We couldn't delete this board, try again later" });
+      });
+  } catch (err) {
+    throw new Error(err);
+  }
 }
 
 module.exports = { createBoard, getBoards, getBoard, deleteBoard };
