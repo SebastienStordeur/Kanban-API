@@ -3,9 +3,9 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 require("dotenv").config();
+const prisma = new PrismaClient();
 
 async function httpSignup(req, res) {
-  const prisma = new PrismaClient();
   const email = req.body.email;
   const password = req.body.password;
   const hashedPassword = bcrypt.hashSync(password, 10);
@@ -32,8 +32,6 @@ async function httpSignup(req, res) {
 }
 
 async function httpLogin(req, res) {
-  const prisma = new PrismaClient();
-
   const user = await prisma.user.findUnique({
     where: {
       email: req.body.email,
@@ -58,8 +56,6 @@ async function httpLogin(req, res) {
 }
 
 async function httpGetProfile(req, res) {
-  const prisma = new PrismaClient();
-
   const token = req.headers.authorization.split(" ")[1];
   const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
   const userId = decodedToken.userId;

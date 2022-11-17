@@ -7,17 +7,42 @@ async function createBoard(req, res) {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
 
-    //add request for columns
-
     await prisma.board
       .create({
-        data: {
-          title: req.body.title,
-          userId: userId,
-        },
+        data: { title: req.body.title, userId: userId },
       })
-      .then(() => {
-        return res.status(201).json({ message: "Board created" });
+      .then(async (response) => {
+        if (req.body.columns) {
+          for (let column of req.body.columns) {
+            await prisma.column.create({
+              data: {
+                column: column.column,
+                boardId: response.id,
+              },
+            });
+          }
+        }
+        async function getBoard() {
+          await prisma.board
+            .findUnique({
+              where: { id: response.id },
+              include: {
+                columns: {
+                  select: {
+                    id: true,
+                    column: true,
+                  },
+                },
+              },
+            })
+            .then((board) => {
+              const boardResponse = board;
+              return res.status(201).json(boardResponse);
+            });
+        }
+        const boardResponse = await getBoard();
+
+        return res.status(201).json(boardResponse);
       })
       .catch((err) => {
         return res.status(400).json({ message: "Board cant be created" + err });
@@ -51,7 +76,7 @@ async function getBoard(req, res) {
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
-    const boardId = JSON.parse(req.params.id);
+    const boardId = JSON.parse(req.params.id || req.body.boardId);
 
     await prisma.board
       .findUnique({
