@@ -135,4 +135,26 @@ async function deleteBoard(req, res) {
   }
 }
 
-module.exports = { createBoard, getBoards, getBoard, deleteBoard };
+async function createTask(req, res) {
+  const boardId = JSON.parse(req.params.id);
+  const authServiceResponse = await getId(req);
+
+  try {
+    await prisma.task
+      .create({
+        data: {
+          title: req.body.title,
+          description: req.body.description,
+          boardId,
+          columnId: req.body.columnId,
+        },
+      })
+      .then((response) => {
+        res.status(201).json(response);
+      });
+  } catch (err) {
+    throw new Error(err);
+  }
+}
+
+module.exports = { createBoard, getBoards, getBoard, deleteBoard, createTask };

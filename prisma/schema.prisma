@@ -37,12 +37,12 @@ model Column {
 model Task {
   id          Int       @id @default(autoincrement())
   title       String
-  descritpion String
+  description String
   subtasks    SubTask[]
   Board       Board?    @relation(fields: [boardId], references: [id])
-  boardId     Int?
+  boardId     Int
   Column      Column?   @relation(fields: [columnId], references: [id])
-  columnId    Int?
+  columnId    Int
 }
 
 model SubTask {
@@ -50,5 +50,5 @@ model SubTask {
   title       String
   isCompleted Boolean
   Task        Task?   @relation(fields: [taskId], references: [id])
-  taskId      Int?
+  taskId      Int
 }
