@@ -139,6 +139,8 @@ async function createTask(req, res) {
   const boardId = JSON.parse(req.params.id);
   const authServiceResponse = await getId(req);
 
+  console.log(req.body);
+
   try {
     await prisma.task
       .create({
@@ -149,7 +151,18 @@ async function createTask(req, res) {
           columnId: req.body.columnId,
         },
       })
-      .then((response) => {
+      .then(async (response) => {
+        if (req.body.subtasks) {
+          for (let subtask of req.body.subtasks) {
+            console.log(subtask);
+            await prisma.subTask.create({
+              data: {
+                title: subtask.title,
+                taskId: response.id,
+              },
+            });
+          }
+        }
         res.status(201).json(response);
       });
   } catch (err) {
