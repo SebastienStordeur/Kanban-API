@@ -3,6 +3,7 @@ const { getId } = require("../../services/authService");
 const prisma = new PrismaClient();
 
 async function createBoard(req, res) {
+  console.log(req.body);
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
@@ -136,9 +137,7 @@ async function deleteBoard(req, res) {
 }
 
 async function createTask(req, res) {
-  const boardId = JSON.parse(req.params.id);
   const authServiceResponse = await getId(req);
-
   console.log(req.body);
 
   try {
@@ -147,18 +146,23 @@ async function createTask(req, res) {
         data: {
           title: req.body.title,
           description: req.body.description,
-          boardId,
-          columnId: req.body.columnId,
+          boardId: JSON.parse(req.body.boardId),
+          columnId: JSON.parse(req.body.columnId),
         },
       })
       .then(async (response) => {
+        console.log("response:", response);
         if (req.body.subtasks) {
+          for (let subtask of req.body.subtasks) {
+            console.log(subtask.subtask);
+          }
           for (let subtask of req.body.subtasks) {
             console.log(subtask);
             await prisma.subTask.create({
               data: {
                 title: subtask.title,
-                taskId: response.id,
+                taskId: JSON.parse(response.id),
+                isCompleted: false,
               },
             });
           }

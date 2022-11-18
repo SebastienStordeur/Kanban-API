@@ -49,6 +49,6 @@ model SubTask {
   id          Int     @id @default(autoincrement())
   title       String
   isCompleted Boolean @default(false)
-  Task        Task?   @relation(fields: [taskId], references: [id])
+  Task        Task    @relation(fields: [taskId], references: [id])
   taskId      Int
 }
