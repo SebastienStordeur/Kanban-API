@@ -114,17 +114,13 @@ async function getBoard(req, res) {
 
 async function deleteBoard(req, res) {
   const boardId = JSON.parse(req.params.id);
-  const authServiceResponse = await getId(req);
-  const userId = authServiceResponse.id;
-
-  console.log(req.body);
+  /* const authServiceResponse = await getId(req);
+  const userId = authServiceResponse.id; */
 
   //need to check if the board is owned by the user
   try {
     await prisma.board
-      .delete({
-        where: { id: boardId },
-      })
+      .delete({ where: { id: boardId } })
       .then(() => {
         res.status(200).json({ message: "Board successfully deleted" });
       })
@@ -147,7 +143,7 @@ async function createTask(req, res) {
           title: req.body.title,
           description: req.body.description,
           boardId: JSON.parse(req.body.boardId),
-          columnId: JSON.parse(req.body.columnId),
+          columnId: 1, //JSON.parse(req.body.columnId),
         },
       })
       .then(async (response) => {

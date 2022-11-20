@@ -20,7 +20,7 @@ model User {
 model Board {
   id      Int      @id @default(autoincrement())
   title   String
-  User    User     @relation(fields: [userId], references: [id])
+  User    User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId  Int
   columns Column[]
   tasks   Task[]
@@ -29,8 +29,8 @@ model Board {
 model Column {
   id      Int    @id @default(autoincrement())
   column  String
-  Board   Board? @relation(fields: [boardId], references: [id])
-  boardId Int?
+  Board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  boardId Int
   tasks   Task[]
 }
 
@@ -39,9 +39,9 @@ model Task {
   title       String
   description String
   subtasks    SubTask[]
-  Board       Board?    @relation(fields: [boardId], references: [id])
+  Board       Board     @relation(fields: [boardId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   boardId     Int
-  Column      Column?   @relation(fields: [columnId], references: [id])
+  Column      Column    @relation(fields: [columnId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   columnId    Int
 }
 
@@ -49,6 +49,6 @@ model SubTask {
   id          Int     @id @default(autoincrement())
   title       String
   isCompleted Boolean @default(false)
-  Task        Task    @relation(fields: [taskId], references: [id])
+  Task        Task    @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   taskId      Int
 }
