@@ -170,4 +170,25 @@ async function createTask(req, res) {
   }
 }
 
-module.exports = { createBoard, getBoards, getBoard, deleteBoard, createTask };
+async function updateSubtask(req, res) {
+  console.log(req.params);
+  try {
+    await prisma.subTask
+      .update({
+        where: { id: req.body.id },
+        data: {
+          isCompleted: JSON.parse(req.body.isCompleted),
+        },
+      })
+      .then((response) => {
+        return res.status(200).json({ message: "Subtask updated" });
+      })
+      .catch((err) => {
+        return res.status(500).json({ message: "Impossible to update this subtask for now. Try again later" + err });
+      });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+module.exports = { createBoard, getBoards, getBoard, deleteBoard, createTask, updateSubtask };
