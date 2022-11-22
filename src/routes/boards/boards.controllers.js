@@ -1,4 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
+const { v4 } = require("uuid");
 const { getId } = require("../../services/authService");
 const prisma = new PrismaClient();
 
@@ -7,13 +8,36 @@ async function createBoard(req, res) {
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
+    let boardId = v4();
+    const columns = req.body.columns;
+    const data = Array.from({ length: columns.length }).map(() => {
+      columns;
+    });
 
-    await prisma.board
+    console.log(data, columns); // return undefined
+
+    //check if title isnt empty
+    //check if any of the columns is empty and remove them if that's the case
+
+    const createBoard = prisma.board.create({ data: { title: req.body.title, userId } });
+    const createColumns = prisma.column.createMany({ data: { column: columns[0].column, boardId } });
+
+    await prisma
+      .$transaction([createBoard, createColumns])
+      .then((response) => {
+        console.log("response", response[0]);
+        return res.status(201).json(response[0]);
+      })
+      .catch((err) => {
+        return res.status(500).json(err);
+      });
+
+    /*     await prisma.board
       .create({
         data: { title: req.body.title, userId: userId },
       })
       .then(async (response) => {
-        if (req.body.columns) {
+        if (req.body.columns.length > 0) {
           for (let column of req.body.columns) {
             await prisma.column.create({
               data: {
@@ -47,7 +71,7 @@ async function createBoard(req, res) {
       })
       .catch((err) => {
         return res.status(400).json({ message: "Board cant be created" + err });
-      });
+      }); */
   } catch (err) {
     throw new Error(err);
   }
@@ -77,7 +101,7 @@ async function getBoard(req, res) {
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
-    const boardId = JSON.parse(req.params.id || req.body.boardId);
+    const boardId = req.params.id || req.body.boardId;
 
     await prisma.board
       .findUnique({
@@ -114,8 +138,8 @@ async function getBoard(req, res) {
 
 async function deleteBoard(req, res) {
   const boardId = JSON.parse(req.params.id);
-  /* const authServiceResponse = await getId(req);
-  const userId = authServiceResponse.id; */
+  const authServiceResponse = await getId(req);
+  const userId = authServiceResponse.id;
 
   //need to check if the board is owned by the user
   try {
@@ -171,32 +195,18 @@ async function createTask(req, res) {
 }
 
 async function updateBoard(req, res) {
-  console.log(req.body);
   const columns = req.body.columns;
   try {
-    /* await prisma.board
-      .update({
-        where: { id: JSON.parse(req.body.id) },
-        data: {
-          title: req.body.title,
-          columns: {
-            upsert: {
-              where: { boardId: JSON.parse(req.body.id) },
-              create: {
-                column: "Test column",
-                boardId: req.body.id,
-              },
-              update: {
-                column: "TEST UPDATE",
-              },
-            },
-          },
-        },
-      }) */
     await prisma
-      .$transaction(
+      .$transaction([
+        prisma.board
+          .update({
+            where: { id: req.body.id },
+            data: { title: req.body.title },
+          })
+          .then((response) => console.log("response", response))
+          .catch((err) => console.log(err)),
         columns.map((column) => {
-          console.log("column", column, column.column, req.body.id);
           prisma.column
             .upsert({
               where: { id: column.id },
@@ -206,9 +216,10 @@ async function updateBoard(req, res) {
                 boardId: req.body.id,
               },
             })
-            .then((response) => console.log(response));
-        })
-      )
+            .then((response) => console.log("map response", response))
+            .catch((err) => console.log(err));
+        }),
+      ])
       .then((response) => {
         return res.status(200).json(response);
       })
@@ -227,7 +238,7 @@ async function updateSubtask(req, res) {
       .update({
         where: { id: req.body.id },
         data: {
-          isCompleted: JSON.parse(req.body.isCompleted),
+          isCompleted: req.body.isCompleted,
         },
       })
       .then((response) => {
