@@ -172,27 +172,48 @@ async function createTask(req, res) {
 
 async function updateBoard(req, res) {
   console.log(req.body);
+  const columns = req.body.columns;
   try {
-    await prisma.board
+    /* await prisma.board
       .update({
-        where: { id: req.body.id },
+        where: { id: JSON.parse(req.body.id) },
         data: {
           title: req.body.title,
           columns: {
-            updateMany: {
-              where: { boardId: req.body.id },
-              data: {
-                column: req.body.columns[0].column,
+            upsert: {
+              where: { boardId: JSON.parse(req.body.id) },
+              create: {
+                column: "Test column",
+                boardId: req.body.id,
+              },
+              update: {
+                column: "TEST UPDATE",
               },
             },
           },
         },
-      })
+      }) */
+    await prisma
+      .$transaction(
+        columns.map((column) => {
+          console.log("column", column, column.column, req.body.id);
+          prisma.column
+            .upsert({
+              where: { id: column.id },
+              update: { column: column.column },
+              create: {
+                column: column.column,
+                boardId: req.body.id,
+              },
+            })
+            .then((response) => console.log(response));
+        })
+      )
       .then((response) => {
         return res.status(200).json(response);
       })
       .catch((err) => {
-        res.status(400).json({ message: "Error while handling the request", err });
+        return res.status(400).json({ message: `Error while handling the request + ${err}` });
       });
   } catch (err) {
     console.error("ERROR", err);
