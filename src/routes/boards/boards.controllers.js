@@ -143,7 +143,7 @@ async function createTask(req, res) {
           title: req.body.title,
           description: req.body.description,
           boardId: JSON.parse(req.body.boardId),
-          columnId: 1, //JSON.parse(req.body.columnId),
+          columnId: JSON.parse(req.body.columnId),
         },
       })
       .then(async (response) => {
@@ -170,6 +170,35 @@ async function createTask(req, res) {
   }
 }
 
+async function updateBoard(req, res) {
+  console.log(req.body);
+  try {
+    await prisma.board
+      .update({
+        where: { id: req.body.id },
+        data: {
+          title: req.body.title,
+          columns: {
+            updateMany: {
+              where: { boardId: req.body.id },
+              data: {
+                column: req.body.columns[0].column,
+              },
+            },
+          },
+        },
+      })
+      .then((response) => {
+        return res.status(200).json(response);
+      })
+      .catch((err) => {
+        res.status(400).json({ message: "Error while handling the request", err });
+      });
+  } catch (err) {
+    console.error("ERROR", err);
+  }
+}
+
 async function updateSubtask(req, res) {
   console.log(req.params);
   try {
@@ -191,4 +220,4 @@ async function updateSubtask(req, res) {
   }
 }
 
-module.exports = { createBoard, getBoards, getBoard, deleteBoard, createTask, updateSubtask };
+module.exports = { createBoard, getBoards, getBoard, deleteBoard, createTask, updateBoard, updateSubtask };
