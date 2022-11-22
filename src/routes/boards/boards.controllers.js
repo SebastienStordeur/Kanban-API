@@ -1,6 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const { v4 } = require("uuid");
 const { getId } = require("../../services/authService");
+const { validationColumns, validationTitle } = require("../../services/validations/createBoard.validation");
 const prisma = new PrismaClient();
 
 async function createBoard(req, res) {
@@ -8,18 +9,12 @@ async function createBoard(req, res) {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
     const boardId = v4();
-    const columns = req.body.columns;
-    const columnArray = [];
-
-    for (let column of columns) {
-      column.boardId = boardId;
-      columnArray.push(column);
-    }
-    //check if title isnt empty
-    //check if any of the columns is empty and remove them if that's the case
-
+    const columns = [];
     const createBoard = prisma.board.create({ data: { id: boardId, title: req.body.title, userId } });
-    const createColumns = prisma.column.createMany({ data: columnArray });
+    const createColumns = prisma.column.createMany({ data: columns });
+
+    validationTitle(req.body.title, res);
+    validationColumns(req.body.columns, columns, boardId);
 
     await prisma
       .$transaction([createBoard, createColumns])
