@@ -19,10 +19,13 @@ async function createBoard(req, res) {
     await prisma
       .$transaction([createBoard, createColumns])
       .then((board) => {
-        return res.status(201).json(board[0]);
+        return res.status(201).json({ id: board[0].id, title: board[0].title });
       })
       .catch((err) => {
         return res.status(500).json(`${err}`);
+      })
+      .finally(() => {
+        return prisma.$disconnect();
       });
   } catch (err) {
     throw new Error(err);
@@ -35,17 +38,18 @@ async function getBoards(req, res) {
     const userId = authServiceResponse.id;
 
     await prisma.board
-      .findMany({
-        where: { userId: userId },
-      })
+      .findMany({ where: { userId } })
       .then((response) => {
         return res.status(200).json(response);
       })
       .catch((err) => {
-        return res.status(400).json(err);
+        return res.status(400).json({ status: 400, err });
+      })
+      .finally(() => {
+        return prisma.$disconnect();
       });
   } catch (err) {
-    return res.status(500).json({ message: "We can't reach this route, try again later" });
+    return res.status(500).json({ status: 500, message: "We can't reach this route, try again later" });
   }
 }
 
@@ -60,10 +64,7 @@ async function getBoard(req, res) {
         where: { id: boardId },
         include: {
           columns: {
-            select: {
-              id: true,
-              column: true,
-            },
+            select: { id: true, column: true },
           },
           tasks: {
             include: {
@@ -81,7 +82,10 @@ async function getBoard(req, res) {
         return res.status(200).json(response);
       })
       .catch((err) => {
-        return res.status(500).json({ msg: "error", err });
+        return res.status(500).json({ status: 500, err });
+      })
+      .finally(() => {
+        return prisma.$disconnect();
       });
   } catch (err) {
     throw new Error(err);
@@ -102,6 +106,9 @@ async function deleteBoard(req, res) {
       })
       .catch((err) => {
         res.status(400).json({ err, message: "We couldn't delete this board, try again later" });
+      })
+      .finally(() => {
+        return prisma.$disconnect();
       });
   } catch (err) {
     throw new Error(err);
@@ -110,6 +117,7 @@ async function deleteBoard(req, res) {
 
 async function createTask(req, res) {
   const authServiceResponse = await getId(req);
+  const userId = authServiceResponse.id;
   console.log(req.body);
 
   try {
@@ -148,28 +156,30 @@ async function createTask(req, res) {
 
 async function updateBoard(req, res) {
   const columns = req.body.columns;
+
+  //Premiere transaction = Mettre a jour le titre
+  //Seconde transaction = Mettre a jour ou creer les colonnes
+  //Return le board updated
   try {
     await prisma
       .$transaction([
-        prisma.board
-          .update({
-            where: { id: req.body.id },
-            data: { title: req.body.title },
-          })
-          .then((response) => console.log("response", response))
-          .catch((err) => console.log(err)),
+        prisma.board.update({
+          where: { id: req.body.id },
+          data: { title: req.body.title },
+        }),
+        /*           .then((response) => console.log("response", response))
+          .catch((err) => console.log(err)), */
         columns.map((column) => {
-          prisma.column
-            .upsert({
-              where: { id: column.id },
-              update: { column: column.column },
-              create: {
-                column: column.column,
-                boardId: req.body.id,
-              },
-            })
-            .then((response) => console.log("map response", response))
-            .catch((err) => console.log(err));
+          prisma.column.upsert({
+            where: { id: column.id },
+            update: { column: column.column },
+            create: {
+              column: column.column,
+              boardId: req.body.id,
+            },
+          });
+          /*             .then((response) => console.log("map response", response))
+            .catch((err) => console.log(err)); */
         }),
       ])
       .then((response) => {
@@ -184,23 +194,23 @@ async function updateBoard(req, res) {
 }
 
 async function updateSubtask(req, res) {
-  console.log(req.params);
   try {
     await prisma.subTask
       .update({
         where: { id: req.body.id },
-        data: {
-          isCompleted: req.body.isCompleted,
-        },
+        data: { isCompleted: req.body.isCompleted },
       })
-      .then((response) => {
+      .then(() => {
         return res.status(200).json({ message: "Subtask updated" });
       })
       .catch((err) => {
         return res.status(500).json({ message: "Impossible to update this subtask for now. Try again later" + err });
+      })
+      .finally(() => {
+        return prisma.$disconnect();
       });
   } catch (err) {
-    console.error(err);
+    throw new Error(err);
   }
 }
 

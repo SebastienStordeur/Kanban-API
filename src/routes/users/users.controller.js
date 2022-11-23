@@ -28,15 +28,14 @@ async function httpSignup(req, res) {
     })
     .catch((err) => {
       return res.status(400).json({ message: "Email already used" });
+    })
+    .finally(() => {
+      return prisma.$disconnect();
     });
 }
 
 async function httpLogin(req, res) {
-  const user = await prisma.user.findUnique({
-    where: {
-      email: req.body.email,
-    },
-  });
+  const user = await prisma.user.findUnique({ where: { email: req.body.email } });
 
   if (user) {
     const matchedPassword = await bcrypt.compare(req.body.password, user.password);
@@ -60,13 +59,9 @@ async function httpGetProfile(req, res) {
   const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
   const userId = decodedToken.userId;
 
-  await prisma.user
-    .findUnique({
-      where: { id: userId },
-    })
-    .then((response) => {
-      res.status(200).json(token);
-    });
+  await prisma.user.findUnique({ where: { id: userId } }).then((response) => {
+    res.status(200).json(token);
+  });
 }
 
 module.exports = {
