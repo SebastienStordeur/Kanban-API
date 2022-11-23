@@ -2,6 +2,7 @@ const { PrismaClient } = require("@prisma/client");
 const { v4 } = require("uuid");
 const { getId } = require("../../services/authService");
 const { validationColumns, validationTitle } = require("../../services/validations/createBoard.validation");
+const { validateSubtasks } = require("../../services/validations/createSubtask.validation");
 const prisma = new PrismaClient();
 
 async function createBoard(req, res) {
@@ -93,19 +94,21 @@ async function getBoard(req, res) {
 }
 
 async function deleteBoard(req, res) {
-  const boardId = req.params.id;
-  const authServiceResponse = await getId(req);
-  const userId = authServiceResponse.id;
-
   //need to check if the board is owned by the user
   try {
+    const boardId = req.params.id;
+    const authServiceResponse = await getId(req);
+    const userId = authServiceResponse.id; // user Id from token
+    //userId in the board
+
+    /* if (userId) */
     await prisma.board
       .delete({ where: { id: boardId } })
       .then(() => {
-        res.status(200).json({ message: "Board successfully deleted" });
+        return res.status(200).json({ status: 200, message: "Board successfully deleted" });
       })
       .catch((err) => {
-        res.status(400).json({ err, message: "We couldn't delete this board, try again later" });
+        return res.status(400).json({ err, status: 400, message: "We couldn't delete this board, try again later" });
       })
       .finally(() => {
         return prisma.$disconnect();
@@ -116,38 +119,35 @@ async function deleteBoard(req, res) {
 }
 
 async function createTask(req, res) {
-  const authServiceResponse = await getId(req);
-  const userId = authServiceResponse.id;
-  console.log(req.body);
-
   try {
-    await prisma.task
-      .create({
-        data: {
-          title: req.body.title,
-          description: req.body.description,
-          boardId: req.body.boardId,
-          columnId: JSON.parse(req.body.columnId),
-        },
+    const authServiceResponse = await getId(req);
+    const userId = authServiceResponse.id;
+    const taskId = v4();
+    const subtasks = [];
+
+    const createTask = prisma.task.create({
+      data: {
+        id: taskId,
+        title: req.body.title,
+        description: req.body.description,
+        columnId: JSON.parse(req.body.columnId),
+        boardId: req.body.boardId,
+      },
+    });
+    const createSubtasks = prisma.subTask.createMany({ data: subtasks });
+
+    validateSubtasks(req.body.subtasks, subtasks, taskId);
+
+    await prisma
+      .$transaction([createTask, createSubtasks])
+      .then((task) => {
+        return res.status(201).json(task);
       })
-      .then(async (response) => {
-        console.log("response:", response);
-        if (req.body.subtasks) {
-          for (let subtask of req.body.subtasks) {
-            console.log(subtask.subtask);
-          }
-          for (let subtask of req.body.subtasks) {
-            console.log(subtask);
-            await prisma.subTask.create({
-              data: {
-                title: subtask.title,
-                taskId: JSON.parse(response.id),
-                isCompleted: false,
-              },
-            });
-          }
-        }
-        res.status(201).json(response);
+      .catch((err) => {
+        return res.status(500).json(`${err}`);
+      })
+      .finally(() => {
+        return prisma.$disconnect();
       });
   } catch (err) {
     throw new Error(err);
