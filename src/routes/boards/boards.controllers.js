@@ -154,32 +154,78 @@ async function createTask(req, res) {
   }
 }
 
+async function deleteTask(req, res) {
+  try {
+    const boardId = req.params.id;
+    await prisma.task
+      .delete({ where: { id: boardId } })
+      .then((response) => {
+        res.status(200).json({ message: "Task deleted", response });
+      })
+      .catch((err) => {
+        res.status(500).json({ message: "Can't delete this task", err });
+      });
+  } catch (err) {}
+}
+
 async function updateBoard(req, res) {
-  const columns = req.body.columns;
+  console.log(req.body);
+  //const columns = req.body.columns;
 
   //Premiere transaction = Mettre a jour le titre
   //Seconde transaction = Mettre a jour ou creer les colonnes
   //Return le board updated
   try {
+    const authServiceResponse = await getId(req);
+    const userId = authServiceResponse.id;
+
+    const boardId = req.body.id;
+    const columns = req.body.columns;
+
+    const updateBoardData = prisma.board.update({
+      where: { id: req.body.id },
+      data: { title: req.body.title },
+    });
+
+    const upsertColumns = prisma.column.upsert({
+      where: { id: 85 },
+      update: columns[0],
+      create: columns[0],
+    });
+
     await prisma
+      .$transaction([updateBoardData, upsertColumns])
+      .then((board) => {
+        return res.status(201).json({ board });
+      })
+      .catch((err) => {
+        console.log(err);
+        return res.status(500).json(`${err}`);
+      })
+      .finally(() => {
+        return prisma.$disconnect();
+      });
+    /* await prisma
       .$transaction([
-        prisma.board.update({
-          where: { id: req.body.id },
-          data: { title: req.body.title },
-        }),
-        /*           .then((response) => console.log("response", response))
-          .catch((err) => console.log(err)), */
+        prisma.board
+          .update({
+            where: { id: req.body.id },
+            data: { title: req.body.title },
+          })
+          .then((response) => console.log("response", response))
+          .catch((err) => console.log(err)),
         columns.map((column) => {
-          prisma.column.upsert({
-            where: { id: column.id },
-            update: { column: column.column },
-            create: {
-              column: column.column,
-              boardId: req.body.id,
-            },
-          });
-          /*             .then((response) => console.log("map response", response))
-            .catch((err) => console.log(err)); */
+          prisma.column
+            .upsert({
+              where: { id: column.id },
+              update: { column: column.column },
+              create: {
+                column: column.column,
+                boardId: req.body.id,
+              },
+            })
+            .then((response) => console.log("map response", response))
+            .catch((err) => console.log(err));
         }),
       ])
       .then((response) => {
@@ -187,7 +233,7 @@ async function updateBoard(req, res) {
       })
       .catch((err) => {
         return res.status(400).json({ message: `Error while handling the request + ${err}` });
-      });
+      }); */
   } catch (err) {
     console.error("ERROR", err);
   }
@@ -214,4 +260,4 @@ async function updateSubtask(req, res) {
   }
 }
 
-module.exports = { createBoard, getBoards, getBoard, deleteBoard, createTask, updateBoard, updateSubtask };
+module.exports = { createBoard, getBoards, getBoard, deleteBoard, createTask, deleteTask, updateBoard, updateSubtask };

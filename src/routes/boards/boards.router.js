@@ -5,6 +5,7 @@ const {
   getBoard,
   deleteBoard,
   createTask,
+  deleteTask,
   updateBoard,
   updateSubtask,
 } = require("./boards.controllers");
@@ -17,6 +18,7 @@ boardsRouter.get("/", auth, getBoards);
 boardsRouter.get("/:id", auth, getBoard);
 boardsRouter.delete("/:id", auth, deleteBoard);
 boardsRouter.post("/:id/task", auth, createTask);
+boardsRouter.delete("/task/:id", deleteTask);
 boardsRouter.put("/:id", updateBoard);
 boardsRouter.put("/subtask/:id", updateSubtask);
 
