@@ -94,14 +94,11 @@ async function getBoard(req, res) {
 }
 
 async function deleteBoard(req, res) {
-  //need to check if the board is owned by the user
   try {
     const boardId = req.params.id;
     const authServiceResponse = await getId(req);
-    const userId = authServiceResponse.id; // user Id from token
-    //userId in the board
+    const userId = authServiceResponse.id;
 
-    /* if (userId) */
     await prisma.board
       .delete({ where: { id: boardId } })
       .then(() => {
@@ -163,18 +160,14 @@ async function deleteTask(req, res) {
         res.status(200).json({ message: "Task deleted", response });
       })
       .catch((err) => {
-        res.status(500).json({ message: "Can't delete this task", err });
+        res.status(500).json({ message: "Can't delete this task ", err });
       });
-  } catch (err) {}
+  } catch (err) {
+    throw new Error(err);
+  }
 }
 
 async function updateBoard(req, res) {
-  console.log(req.body);
-  //const columns = req.body.columns;
-
-  //Premiere transaction = Mettre a jour le titre
-  //Seconde transaction = Mettre a jour ou creer les colonnes
-  //Return le board updated
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
