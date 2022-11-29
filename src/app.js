@@ -13,6 +13,10 @@ app.use(cors());
 
 app.use(express.json());
 
+app.get("/", () => {
+  return " OK WORKING";
+});
+
 app.use("/user", usersRouter);
 app.use("/board", boardsRouter);
 app.use("/task", tasksRouter);
