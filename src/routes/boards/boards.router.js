@@ -7,6 +7,7 @@ const {
   createTask,
   deleteTask,
   updateBoard,
+  updateTask,
   updateSubtask,
 } = require("./boards.controllers");
 
@@ -20,6 +21,7 @@ boardsRouter.delete("/:id", auth, deleteBoard);
 boardsRouter.post("/:id/task", auth, createTask);
 boardsRouter.delete("/task/:id", deleteTask);
 boardsRouter.put("/:id", updateBoard);
+boardsRouter.put("/task/:id", updateTask);
 boardsRouter.put("/subtask/:id", updateSubtask);
 
 module.exports = boardsRouter;

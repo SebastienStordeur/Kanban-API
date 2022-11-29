@@ -1,8 +1,13 @@
 const { PrismaClient } = require("@prisma/client");
 const { v4 } = require("uuid");
 const { getId } = require("../../services/authService");
-const { validationColumns, validationTitle } = require("../../services/validations/createBoard.validation");
-const { validateSubtasks } = require("../../services/validations/createSubtask.validation");
+const {
+  validationColumns,
+  validationTitle,
+} = require("../../services/validations/createBoard.validation");
+const {
+  validateSubtasks,
+} = require("../../services/validations/createSubtask.validation");
 const prisma = new PrismaClient();
 
 async function createBoard(req, res) {
@@ -11,7 +16,9 @@ async function createBoard(req, res) {
     const userId = authServiceResponse.id;
     const boardId = v4();
     const columns = [];
-    const createBoard = prisma.board.create({ data: { id: boardId, title: req.body.title, userId } });
+    const createBoard = prisma.board.create({
+      data: { id: boardId, title: req.body.title, userId },
+    });
     const createColumns = prisma.column.createMany({ data: columns });
 
     validationTitle(req.body.title, res);
@@ -50,7 +57,10 @@ async function getBoards(req, res) {
         return prisma.$disconnect();
       });
   } catch (err) {
-    return res.status(500).json({ status: 500, message: "We can't reach this route, try again later" });
+    return res.status(500).json({
+      status: 500,
+      message: "We can't reach this route, try again later",
+    });
   }
 }
 
@@ -78,7 +88,9 @@ async function getBoard(req, res) {
       })
       .then((response) => {
         if (userId !== response.userId) {
-          return res.status(403).json({ status: 403, message: "Forbidden access" });
+          return res
+            .status(403)
+            .json({ status: 403, message: "Forbidden access" });
         }
         return res.status(200).json(response);
       })
@@ -102,10 +114,16 @@ async function deleteBoard(req, res) {
     await prisma.board
       .delete({ where: { id: boardId } })
       .then(() => {
-        return res.status(200).json({ status: 200, message: "Board successfully deleted" });
+        return res
+          .status(200)
+          .json({ status: 200, message: "Board successfully deleted" });
       })
       .catch((err) => {
-        return res.status(400).json({ err, status: 400, message: "We couldn't delete this board, try again later" });
+        return res.status(400).json({
+          err,
+          status: 400,
+          message: "We couldn't delete this board, try again later",
+        });
       })
       .finally(() => {
         return prisma.$disconnect();
@@ -169,66 +187,87 @@ async function deleteTask(req, res) {
 
 async function updateBoard(req, res) {
   try {
-    const authServiceResponse = await getId(req);
-    const userId = authServiceResponse.id;
+    /* const authServiceResponse = await getId(req); */
+    /* const userId = authServiceResponse.id; */
 
     const boardId = req.body.id;
     const columns = req.body.columns;
 
-    const updateBoardData = prisma.board.update({
-      where: { id: req.body.id },
-      data: { title: req.body.title },
-    });
+    await prisma.board
+      .update({
+        where: { id: req.body.id },
+        data: { title: req.body.title },
+      })
+      .then(async () => {
+        for (const column of columns) {
+          if (column.id) {
+            await prisma.column.update({
+              where: { id: column.id },
+              data: { column: column.column },
+            });
+          } else {
+            await prisma.column.create({
+              data: {
+                column: column.column,
+                boardId,
+              },
+            });
+          }
 
-    const upsertColumns = prisma.column.upsert({
-      where: { id: 85 },
-      update: columns[0],
-      create: columns[0],
-    });
-
-    await prisma
-      .$transaction([updateBoardData, upsertColumns])
-      .then((board) => {
-        return res.status(201).json({ board });
+          /*             .then((response) => res.status(200).json(response))
+            .catch((err) => res.status(500).json(err)); */
+        }
       })
       .catch((err) => {
         console.log(err);
-        return res.status(500).json(`${err}`);
-      })
-      .finally(() => {
-        return prisma.$disconnect();
+        res.status(500).json({ msg: "error", err });
       });
-    /* await prisma
-      .$transaction([
-        prisma.board
-          .update({
-            where: { id: req.body.id },
-            data: { title: req.body.title },
-          })
-          .then((response) => console.log("response", response))
-          .catch((err) => console.log(err)),
-        columns.map((column) => {
-          prisma.column
-            .upsert({
-              where: { id: column.id },
-              update: { column: column.column },
-              create: {
-                column: column.column,
-                boardId: req.body.id,
-              },
-            })
-            .then((response) => console.log("map response", response))
-            .catch((err) => console.log(err));
-        }),
-      ])
-      .then((response) => {
-        return res.status(200).json(response);
-      })
-      .catch((err) => {
-        return res.status(400).json({ message: `Error while handling the request + ${err}` });
-      }); */
   } catch (err) {
     console.error("ERROR", err);
+  }
+}
+
+async function updateTask(req, res) {
+  try {
+    const subtasks = req.body.subtasks;
+    await prisma.task
+      .update({
+        where: { id: req.body.id },
+        data: {
+          title: req.body.title,
+          description: req.body.description,
+          columnId: req.body.columnId,
+        },
+      })
+      .then(async () => {
+        try {
+          for (const subtask of subtasks) {
+            if (subtask.id) {
+              await prisma.subTask.update({
+                where: { id: subtask.id },
+                data: {
+                  title: subtask.title,
+                },
+              });
+            } else {
+              await prisma.subTask.create({
+                data: {
+                  title: subtask.title,
+                  taskId: req.body.id,
+                },
+              });
+            }
+          }
+          return res
+            .status(201)
+            .json({ message: "Task successfully update", status: 201 });
+        } catch (err) {
+          throw new Error(err);
+        }
+      })
+      .catch((err) => console.log(err));
+  } catch (err) {
+    throw new Error(err);
   }
 }
 
@@ -243,7 +282,10 @@ async function updateSubtask(req, res) {
         return res.status(200).json({ message: "Subtask updated" });
       })
       .catch((err) => {
-        return res.status(500).json({ message: "Impossible to update this subtask for now. Try again later" + err });
+        return res.status(500).json({
+          message:
+            "Impossible to update this subtask for now. Try again later " + err,
+        });
       })
       .finally(() => {
         return prisma.$disconnect();
@@ -253,4 +295,14 @@ async function updateSubtask(req, res) {
   }
 }
 
-module.exports = { createBoard, getBoards, getBoard, deleteBoard, createTask, deleteTask, updateBoard, updateSubtask };
+module.exports = {
+  createBoard,
+  getBoards,
+  getBoard,
+  deleteBoard,
+  createTask,
+  deleteTask,
+  updateBoard,
+  updateTask,
+  updateSubtask,
+};
