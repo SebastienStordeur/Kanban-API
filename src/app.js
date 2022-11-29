@@ -4,6 +4,7 @@ const helmet = require("helmet");
 
 const usersRouter = require("./routes/users/users.router");
 const boardsRouter = require("./routes/boards/boards.router");
+const tasksRouter = require("./routes/tasks/task.router");
 
 const app = express();
 
@@ -14,5 +15,6 @@ app.use(express.json());
 
 app.use("/user", usersRouter);
 app.use("/board", boardsRouter);
+app.use("/task", tasksRouter);
 
 module.exports = app;
