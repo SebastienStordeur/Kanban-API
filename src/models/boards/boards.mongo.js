@@ -12,6 +12,14 @@ const boardsSchema = new mongoose.Schema({
     type: [
       {
         title: String,
+        tasks: {
+          type: [
+            {
+              title: String,
+            },
+          ],
+          default: [],
+        },
       },
     ],
     default: [],

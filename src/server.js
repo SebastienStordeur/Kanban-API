@@ -1,5 +1,6 @@
 const http = require("http");
 const mongoose = require("mongoose");
+require("dotenv").config();
 
 const PORT = 8000;
 
