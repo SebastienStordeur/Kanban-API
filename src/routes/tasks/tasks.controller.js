@@ -1,4 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
+/* const { PrismaClient } = require("@prisma/client");
 const { v4 } = require("uuid");
 const { getId } = require("../../services/authService");
 const {
@@ -135,3 +135,4 @@ module.exports = {
   updateTask,
   updateSubtask,
 };
+ */

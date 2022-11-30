@@ -5,6 +5,7 @@ const {
 } = require("../../services/validations/createBoard.validation");
 
 const Board = require("../../models/boards/boards.mongo");
+const { default: mongoose } = require("mongoose");
 
 async function httpCreateBoard(req, res) {
   try {
@@ -24,7 +25,7 @@ async function httpCreateBoard(req, res) {
     await board
       .save()
       .then((board) => {
-        return res.status(201).json({ id: board._id, title: board.title });
+        return res.status(201).json({ _id: board._id, title: board.title });
       })
       .catch((err) => {
         return res.status(500).json(`${err}`);
@@ -92,41 +93,34 @@ async function deleteBoard(req, res) {
 
 async function updateBoard(req, res) {
   try {
-    /* const authServiceResponse = await getId(req); */
-    /* const userId = authServiceResponse.id; */
+    const authServiceResponse = await getId(req);
+    const userId = authServiceResponse.id;
 
     const boardId = req.body.id;
     const columns = req.body.columns;
 
-    await prisma.board
-      .update({
-        where: { id: req.body.id },
-        data: { title: req.body.title },
-      })
-      .then(async () => {
-        for (const column of columns) {
-          if (column.id) {
-            await prisma.column.update({
-              where: { id: column.id },
-              data: { column: column.column },
-            });
-          } else {
-            await prisma.column.create({
-              data: {
-                column: column.column,
-                boardId,
-              },
-            });
-          }
+    const session = await mongoose.startSession();
+    let index = 0;
 
-          /*             .then((response) => res.status(200).json(response))
-            .catch((err) => res.status(500).json(err)); */
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        res.status(500).json({ msg: "error", err });
-      });
+    await session.withTransaction(async () => {
+      await Board.updateOne({ _id: boardId }, { title: req.body.title });
+      //function 2 Update Columns
+      for (const column of columns) {
+        await Board.findOneAndUpdate(
+          { _id: boardId },
+          {
+            columns: [...columns],
+          },
+          { new: true, upsert: true }
+        ).then((response) => {
+          index++;
+          console.log(response);
+        });
+      }
+
+      return res.status(200).json({ msg: "OK" });
+    });
+    session.endSession();
   } catch (err) {
     console.error("ERROR", err);
   }

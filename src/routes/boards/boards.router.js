@@ -14,9 +14,11 @@ boardsRouter.post("/", auth, httpCreateBoard);
 boardsRouter.get("/", auth, getBoards);
 boardsRouter.get("/:id", auth, getBoard);
 boardsRouter.delete("/:id", auth, deleteBoard);
+boardsRouter.put("/:id", auth, updateBoard);
+
 /* boardsRouter.post("/:id/task", auth, createTask);
 boardsRouter.delete("/task/:id", auth, deleteTask); */
-/* boardsRouter.put("/:id", auth, updateBoard); */
+
 /* boardsRouter.put("/task/:id", auth, updateTask);
 boardsRouter.put("/subtask/:id", auth, updateSubtask); */
 
