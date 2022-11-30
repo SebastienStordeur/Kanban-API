@@ -66,7 +66,6 @@ async function getBoard(req, res) {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
     const boardId = req.params.id || req.body.boardId;
-
     const board = await Board.findById(boardId);
 
     if (board.userId === userId) {
@@ -87,24 +86,21 @@ async function deleteBoard(req, res) {
     const boardId = req.params.id;
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
+    const board = await Board.findById(boardId);
 
-    await prisma.board
-      .delete({ where: { id: boardId } })
-      .then(() => {
-        return res
-          .status(200)
-          .json({ status: 200, message: "Board successfully deleted" });
-      })
-      .catch((err) => {
-        return res.status(400).json({
-          err,
-          status: 400,
-          message: "We couldn't delete this board, try again later",
+    if (board.userId === userId) {
+      await board
+        .deleteOne({ _id: boardId })
+        .then(() => {
+          return res.status(200).json({ status: 200, success: true });
+        })
+        .catch(() => {
+          return res.status(500).json({
+            status: 500,
+            error: "We couldn't delete this board. Try again later.",
+          });
         });
-      })
-      .finally(() => {
-        return prisma.$disconnect();
-      });
+    }
   } catch (err) {
     throw new Error(err);
   }
