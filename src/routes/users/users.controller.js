@@ -39,8 +39,6 @@ async function httpLogin(req, res) {
   const email = req.body.email;
   const user = await User.findOne({ email });
 
-  console.log("user in login", user);
-
   if (user) {
     const matchedPassword = await bcrypt.compare(
       req.body.password,

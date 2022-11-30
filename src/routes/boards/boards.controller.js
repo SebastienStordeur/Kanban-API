@@ -1,4 +1,3 @@
-const { PrismaClient } = require("@prisma/client");
 const { v4 } = require("uuid");
 const { getId } = require("../../services/authService");
 const {
@@ -6,32 +5,43 @@ const {
   validationTitle,
 } = require("../../services/validations/createBoard.validation");
 
-const prisma = new PrismaClient();
+const mongoose = require("mongoose");
 
-async function createBoard(req, res) {
+const Board = require("../../models/boards/boards.mongo");
+
+async function httpCreateBoard(req, res) {
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
-    const boardId = v4();
-    const columns = [];
-    const createBoard = prisma.board.create({
+    /*  const boardId = v4();
+    const columns = []; */
+
+    /*     const createBoard = prisma.board.create({
       data: { id: boardId, title: req.body.title, userId },
     });
-    const createColumns = prisma.column.createMany({ data: columns });
+    const createColumns = prisma.column.createMany({ data: columns }); */
 
+    //Premiere transaction creation de board
+    //Puis creation des colonnes
+    //Puis push l'id dans le tableau de board de l'utilisateur
+
+    const createBoard = "";
+    /* 
     validationTitle(req.body.title, res);
-    validationColumns(req.body.columns, columns, boardId);
+    validationColumns(req.body.columns, columns, boardId); */
 
-    await prisma
-      .$transaction([createBoard, createColumns])
+    const board = new Board({
+      title: req.body.title,
+      userId,
+    });
+
+    board
+      .save()
       .then((board) => {
-        return res.status(201).json({ id: board[0].id, title: board[0].title });
+        return res.status(201).json({ id: board._id, title: board.title });
       })
       .catch((err) => {
         return res.status(500).json(`${err}`);
-      })
-      .finally(() => {
-        return prisma.$disconnect();
       });
   } catch (err) {
     throw new Error(err);
@@ -39,27 +49,16 @@ async function createBoard(req, res) {
 }
 
 async function getBoards(req, res) {
-  try {
-    const authServiceResponse = await getId(req);
-    const userId = authServiceResponse.id;
+  const authServiceResponse = await getId(req);
+  const userId = authServiceResponse.id;
 
-    await prisma.board
-      .findMany({ where: { userId } })
-      .then((response) => {
-        return res.status(200).json(response);
-      })
-      .catch((err) => {
-        return res.status(400).json({ status: 400, err });
-      })
-      .finally(() => {
-        return prisma.$disconnect();
-      });
-  } catch (err) {
-    return res.status(500).json({
-      status: 500,
-      message: "We can't reach this route, try again later",
-    });
-  }
+  await Board.find({ userId }, (err, docs) => {
+    if (!err) {
+      return res.status(200).json(docs);
+    } else {
+      return res.status(500).json(err);
+    }
+  });
 }
 
 async function getBoard(req, res) {
@@ -68,36 +67,16 @@ async function getBoard(req, res) {
     const userId = authServiceResponse.id;
     const boardId = req.params.id || req.body.boardId;
 
-    await prisma.board
-      .findUnique({
-        where: { id: boardId },
-        include: {
-          columns: {
-            select: { id: true, column: true },
-          },
-          tasks: {
-            include: {
-              subtasks: {
-                select: { id: true, title: true, isCompleted: true },
-              },
-            },
-          },
-        },
-      })
-      .then((response) => {
-        if (userId !== response.userId) {
-          return res
-            .status(403)
-            .json({ status: 403, message: "Forbidden access" });
-        }
-        return res.status(200).json(response);
-      })
-      .catch((err) => {
-        return res.status(500).json({ status: 500, err });
-      })
-      .finally(() => {
-        return prisma.$disconnect();
+    const board = await Board.findById(boardId);
+
+    if (board.userId === userId) {
+      return res.status(200).json(board);
+    } else {
+      return res.status(403).json({
+        status: 403,
+        error: "You are not allowed to see this board",
       });
+    }
   } catch (err) {
     throw new Error(err);
   }
@@ -174,7 +153,7 @@ async function updateBoard(req, res) {
 }
 
 module.exports = {
-  createBoard,
+  httpCreateBoard,
   getBoards,
   getBoard,
   deleteBoard,

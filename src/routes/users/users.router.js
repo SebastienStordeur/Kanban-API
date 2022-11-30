@@ -6,6 +6,6 @@ const usersRouter = express.Router();
 
 usersRouter.post("/signup", httpSignup);
 usersRouter.post("/login", httpLogin);
-usersRouter.get("/", auth, httpGetProfile);
+/* usersRouter.get("/", auth, httpGetProfile); //???*/
 
 module.exports = usersRouter;

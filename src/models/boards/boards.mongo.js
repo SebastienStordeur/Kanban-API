@@ -5,6 +5,9 @@ const boardsSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  userId: {
+    type: String,
+  },
   /*   columns: {
 
   } */
