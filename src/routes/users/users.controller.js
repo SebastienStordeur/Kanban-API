@@ -36,9 +36,10 @@ async function httpSignup(req, res) {
 }
 
 async function httpLogin(req, res) {
-  const user = await prisma.user.findUnique({
-    where: { email: req.body.email },
-  });
+  const email = req.body.email;
+  const user = await User.findOne({ email });
+
+  console.log("user in login", user);
 
   if (user) {
     const matchedPassword = await bcrypt.compare(
@@ -46,26 +47,27 @@ async function httpLogin(req, res) {
       user.password
     );
     if (!matchedPassword) {
-      return res
-        .status(400)
-        .json({ error: true, message: "Wrong email/password combination" });
+      return res.status(400).json({
+        status: 400,
+        error: true,
+        message: "Wrong email/password combination",
+      });
     } else {
-      const payload = {
-        id: user.id,
-        refreshToken: "Un autre token",
-      };
+      const payload = { id: user._id };
       const token = jwt.sign(payload, process.env.SECRET_KEY, {
-        expiresIn: "1d",
+        expiresIn: "30d",
       });
       return res.status(200).json({
-        id: user.id,
+        id: user._id,
         token,
-        refreshToken: "Un autre token",
         status: 200,
       });
     }
   } else {
-    return res.status(400).json({ error: "User doesn't exist" });
+    return res.status(400).json({
+      status: 400,
+      error: "User doesn't exist",
+    });
   }
 }
 
