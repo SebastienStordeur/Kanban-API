@@ -1,11 +1,8 @@
-const { v4 } = require("uuid");
 const { getId } = require("../../services/authService");
 const {
   validationColumns,
   validationTitle,
 } = require("../../services/validations/createBoard.validation");
-
-const mongoose = require("mongoose");
 
 const Board = require("../../models/boards/boards.mongo");
 
@@ -13,29 +10,18 @@ async function httpCreateBoard(req, res) {
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
-    /*  const boardId = v4();
-    const columns = []; */
+    const columns = [];
 
-    /*     const createBoard = prisma.board.create({
-      data: { id: boardId, title: req.body.title, userId },
-    });
-    const createColumns = prisma.column.createMany({ data: columns }); */
-
-    //Premiere transaction creation de board
-    //Puis creation des colonnes
-    //Puis push l'id dans le tableau de board de l'utilisateur
-
-    const createBoard = "";
-    /* 
     validationTitle(req.body.title, res);
-    validationColumns(req.body.columns, columns, boardId); */
+    validationColumns(req.body.columns, columns);
 
     const board = new Board({
       title: req.body.title,
       userId,
+      columns,
     });
 
-    board
+    await board
       .save()
       .then((board) => {
         return res.status(201).json({ id: board._id, title: board.title });
@@ -49,16 +35,14 @@ async function httpCreateBoard(req, res) {
 }
 
 async function getBoards(req, res) {
-  const authServiceResponse = await getId(req);
-  const userId = authServiceResponse.id;
-
-  await Board.find({ userId }, (err, docs) => {
-    if (!err) {
-      return res.status(200).json(docs);
-    } else {
-      return res.status(500).json(err);
-    }
-  });
+  try {
+    const authServiceResponse = await getId(req);
+    const userId = authServiceResponse.id;
+    const boards = await Board.find({ userId });
+    return res.status(200).json(boards);
+  } catch (error) {
+    throw new Error(error);
+  }
 }
 
 async function getBoard(req, res) {

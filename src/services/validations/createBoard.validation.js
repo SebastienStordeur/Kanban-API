@@ -4,12 +4,11 @@ function validationTitle(title, res) {
   }
 }
 
-function validationColumns(columns, array, id) {
+function validationColumns(columns, array) {
   for (const column of columns) {
-    if (column.column.trim() === "") {
+    if (column.title.trim() === "") {
       console.log(column);
     } else {
-      column.boardId = id;
       array.push(column);
     }
   }

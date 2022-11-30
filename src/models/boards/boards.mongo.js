@@ -8,9 +8,14 @@ const boardsSchema = new mongoose.Schema({
   userId: {
     type: String,
   },
-  /*   columns: {
-
-  } */
+  columns: {
+    type: [
+      {
+        title: String,
+      },
+    ],
+    default: [],
+  },
 });
 
 module.exports = mongoose.model("Board", boardsSchema);
