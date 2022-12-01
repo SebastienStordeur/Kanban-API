@@ -4,6 +4,8 @@ const {
 } = require("../../services/validations/createSubtask.validation");
 
 const Board = require("../../models/boards/boards.mongo");
+const boardsMongo = require("../../models/boards/boards.mongo");
+const { findOneAndDelete } = require("../../models/users/users.mongo");
 
 async function httpCreateTask(req, res) {
   try {
@@ -11,51 +13,30 @@ async function httpCreateTask(req, res) {
     const userId = authServiceResponse.id;
 
     const task = req.body.task;
-    const subtasks = [];
 
-    await Board.updateOne(
-      { _id: req.body.id },
-      { $push: { tasks: task } },
-      { new: true }
-    )
+    await Board.updateOne({ _id: req.body.id }, { $push: { tasks: task } })
       .then(() => {
         return res.status(200).json({ status: 200, success: true });
       })
       .catch((err) => {
         return res.status(500).json({ status: 500, err });
       });
-
-    /*     const createTask = prisma.task.create({
-      data: {
-        id: taskId,
-        title: req.body.title,
-        description: req.body.description,
-        columnId: JSON.parse(req.body.columnId),
-        boardId: req.body.boardId,
-      },
-    });
-    const createSubtasks = prisma.subTask.createMany({ data: subtasks });
-
-    validateSubtasks(req.body.subtasks, subtasks, taskId); */
-
-    /*   */
   } catch (err) {
     throw new Error(err);
   }
 }
 
-async function deleteTask(req, res) {
+async function httpDeleteTask(req, res) {
   try {
-    const boardId = req.params.id;
-    await prisma.task
-      .delete({ where: { id: boardId } })
+    await Board.updateOne(
+      { _id: req.body.id },
+      { $pull: { tasks: { _id: req.body.taskId } } }
+    )
       .then((response) => {
-        return res.status(200).json({ message: "Task deleted", response });
+        return res.status(200).json({ status: 200, response });
       })
       .catch((err) => {
-        return res
-          .status(500)
-          .json({ message: "Can't delete this task ", err });
+        return res.status(500).json(err);
       });
   } catch (err) {
     throw new Error(err);
@@ -132,7 +113,7 @@ async function updateSubtask(req, res) {
 
 module.exports = {
   httpCreateTask,
-  deleteTask,
+  httpDeleteTask,
   updateTask,
   updateSubtask,
 };
