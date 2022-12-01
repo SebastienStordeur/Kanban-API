@@ -1,20 +1,20 @@
 const express = require("express");
 const {
   httpCreateBoard,
-  getBoards,
-  getBoard,
-  deleteBoard,
-  updateBoard,
+  httpGetBoards,
+  httpGetBoard,
+  httpDeleteBoard,
+  httpUpdateBoard,
 } = require("./boards.controller");
 
 const boardsRouter = express.Router();
 const auth = require("../../middleware/Auth");
 
 boardsRouter.post("/", auth, httpCreateBoard);
-boardsRouter.get("/", auth, getBoards);
-boardsRouter.get("/:id", auth, getBoard);
-boardsRouter.delete("/:id", auth, deleteBoard);
-boardsRouter.put("/:id", auth, updateBoard);
+boardsRouter.get("/", auth, httpGetBoards);
+boardsRouter.get("/:id", auth, httpGetBoard);
+boardsRouter.delete("/:id", auth, httpDeleteBoard);
+boardsRouter.put("/:id", auth, httpUpdateBoard);
 
 /* boardsRouter.post("/:id/task", auth, createTask);
 boardsRouter.delete("/task/:id", auth, deleteTask); */

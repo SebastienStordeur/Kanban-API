@@ -15,6 +15,6 @@ app.use(express.json());
 
 app.use("/user", usersRouter);
 app.use("/board", boardsRouter);
-/* app.use("/task", tasksRouter); */
+app.use("/task", tasksRouter);
 
 module.exports = app;

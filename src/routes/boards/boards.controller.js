@@ -35,7 +35,7 @@ async function httpCreateBoard(req, res) {
   }
 }
 
-async function getBoards(req, res) {
+async function httpGetBoards(req, res) {
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
@@ -46,7 +46,7 @@ async function getBoards(req, res) {
   }
 }
 
-async function getBoard(req, res) {
+async function httpGetBoard(req, res) {
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
@@ -66,7 +66,7 @@ async function getBoard(req, res) {
   }
 }
 
-async function deleteBoard(req, res) {
+async function httpDeleteBoard(req, res) {
   try {
     const boardId = req.params.id;
     const authServiceResponse = await getId(req);
@@ -91,7 +91,7 @@ async function deleteBoard(req, res) {
   }
 }
 
-async function updateBoard(req, res) {
+async function httpUpdateBoard(req, res) {
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
@@ -129,8 +129,8 @@ async function updateBoard(req, res) {
 
 module.exports = {
   httpCreateBoard,
-  getBoards,
-  getBoard,
-  deleteBoard,
-  updateBoard,
+  httpGetBoards,
+  httpGetBoard,
+  httpDeleteBoard,
+  httpUpdateBoard,
 };

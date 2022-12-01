@@ -1,20 +1,31 @@
-/* const { PrismaClient } = require("@prisma/client");
-const { v4 } = require("uuid");
 const { getId } = require("../../services/authService");
 const {
   validateSubtasks,
 } = require("../../services/validations/createSubtask.validation");
 
-const prisma = new PrismaClient();
+const Board = require("../../models/boards/boards.mongo");
 
-async function createTask(req, res) {
+async function httpCreateTask(req, res) {
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
-    const taskId = v4();
+
+    const task = req.body.task;
     const subtasks = [];
 
-    const createTask = prisma.task.create({
+    await Board.updateOne(
+      { _id: req.body.id },
+      { $push: { tasks: task } },
+      { new: true }
+    )
+      .then(() => {
+        return res.status(200).json({ status: 200, success: true });
+      })
+      .catch((err) => {
+        return res.status(500).json({ status: 500, err });
+      });
+
+    /*     const createTask = prisma.task.create({
       data: {
         id: taskId,
         title: req.body.title,
@@ -25,19 +36,9 @@ async function createTask(req, res) {
     });
     const createSubtasks = prisma.subTask.createMany({ data: subtasks });
 
-    validateSubtasks(req.body.subtasks, subtasks, taskId);
+    validateSubtasks(req.body.subtasks, subtasks, taskId); */
 
-    await prisma
-      .$transaction([createTask, createSubtasks])
-      .then((task) => {
-        return res.status(201).json(task);
-      })
-      .catch((err) => {
-        return res.status(500).json(`${err}`);
-      })
-      .finally(() => {
-        return prisma.$disconnect();
-      });
+    /*   */
   } catch (err) {
     throw new Error(err);
   }
@@ -130,9 +131,8 @@ async function updateSubtask(req, res) {
 }
 
 module.exports = {
-  createTask,
+  httpCreateTask,
   deleteTask,
   updateTask,
   updateSubtask,
 };
- */
