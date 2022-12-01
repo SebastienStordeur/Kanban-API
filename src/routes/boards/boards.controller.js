@@ -95,32 +95,33 @@ async function updateBoard(req, res) {
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
-
     const boardId = req.body.id;
     const columns = req.body.columns;
 
-    const session = await mongoose.startSession();
-    let index = 0;
+    await Board.findOne({ _id: boardId })
+      .then(async (board) => {
+        if (board.userId === userId) {
+          const session = await mongoose.startSession();
 
-    await session.withTransaction(async () => {
-      await Board.updateOne({ _id: boardId }, { title: req.body.title });
-      //function 2 Update Columns
-      for (const column of columns) {
-        await Board.findOneAndUpdate(
-          { _id: boardId },
-          {
-            columns: [...columns],
-          },
-          { new: true, upsert: true }
-        ).then((response) => {
-          index++;
-          console.log(response);
-        });
-      }
-
-      return res.status(200).json({ msg: "OK" });
-    });
-    session.endSession();
+          await session.withTransaction(async () => {
+            await Board.updateOne({ _id: boardId }, { title: req.body.title });
+            await Board.findOneAndUpdate(
+              { _id: boardId },
+              { columns: [...columns] },
+              { new: true, upsert: true }
+            );
+            return res.status(200).json({ msg: "OK" });
+          });
+          session.endSession();
+        } else {
+          return res
+            .status(403)
+            .json({ status: 403, error: "Forbidden access", err });
+        }
+      })
+      .catch((err) => {
+        return res.status(500).json(err);
+      });
   } catch (err) {
     console.error("ERROR", err);
   }
