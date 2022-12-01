@@ -4,8 +4,8 @@ const {
 } = require("../../services/validations/createSubtask.validation");
 
 const Board = require("../../models/boards/boards.mongo");
-const boardsMongo = require("../../models/boards/boards.mongo");
-const { findOneAndDelete } = require("../../models/users/users.mongo");
+
+const mongoose = require("mongoose");
 
 async function httpCreateTask(req, res) {
   try {
@@ -43,53 +43,45 @@ async function httpDeleteTask(req, res) {
   }
 }
 
-async function updateTask(req, res) {
+async function httpUpdateTask(req, res) {
+  console.log(req.body);
   try {
-    const subtasks = req.body.subtasks;
-    await prisma.task
-      .update({
-        where: { id: req.body.id },
-        data: {
-          title: req.body.title,
-          description: req.body.description,
-          columnId: req.body.columnId,
-        },
-      })
-      .then(async () => {
-        try {
-          for (const subtask of subtasks) {
-            if (subtask.id) {
-              await prisma.subTask.update({
-                where: { id: subtask.id },
-                data: {
-                  title: subtask.title,
-                },
-              });
-            } else {
-              await prisma.subTask.create({
-                data: {
-                  title: subtask.title,
-                  taskId: req.body.id,
-                },
-              });
-            }
-          }
-          return res
-            .status(201)
-            .json({ message: "Task successfully update", status: 201 });
-        } catch (err) {
-          throw new Error(err);
+    const subtasks = req.body.task.subtasks;
+    const session = await mongoose.startSession();
+
+    await session.withTransaction(async () => {
+      await Board.updateOne(
+        { "tasks._id": req.body.task.id },
+        {
+          $set: {
+            "tasks.$.title": req.body.task.title,
+            "tasks.$.description": req.body.task.description,
+            "tasks.$.columnId": req.body.task.columnId,
+          },
         }
-      })
-      .catch((err) => console.log(err));
+      );
+
+      await Board.findOneAndUpdate(
+        { "tasks._id": req.body.task.id },
+        { "tasks.$.subtasks": [...subtasks] },
+        { new: true, upsert: true }
+      )
+        .then((response) => {
+          return res.status(200).json({ status: 200, response });
+        })
+        .catch((err) => {
+          return res.status(500).json(err);
+        });
+    });
+    session.endSession();
   } catch (err) {
     throw new Error(err);
   }
 }
 
-async function updateSubtask(req, res) {
+async function httpUpdateSubtask(req, res) {
   try {
-    await prisma.subTask
+    /* await prisma.subTask
       .update({
         where: { id: req.body.id },
         data: { isCompleted: req.body.isCompleted },
@@ -105,7 +97,7 @@ async function updateSubtask(req, res) {
       })
       .finally(() => {
         return prisma.$disconnect();
-      });
+      }); */
   } catch (err) {
     throw new Error(err);
   }
@@ -114,6 +106,6 @@ async function updateSubtask(req, res) {
 module.exports = {
   httpCreateTask,
   httpDeleteTask,
-  updateTask,
-  updateSubtask,
+  httpUpdateTask,
+  httpUpdateSubtask,
 };

@@ -26,7 +26,10 @@ const boardsSchema = new mongoose.Schema({
           type: [
             {
               title: String,
-              isCompleted: Boolean,
+              isCompleted: {
+                type: Boolean,
+                default: false,
+              },
             },
           ],
         },
