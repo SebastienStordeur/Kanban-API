@@ -16,10 +16,4 @@ boardsRouter.get("/:id", auth, httpGetBoard);
 boardsRouter.delete("/:id", auth, httpDeleteBoard);
 boardsRouter.put("/:id", auth, httpUpdateBoard);
 
-/* boardsRouter.post("/:id/task", auth, createTask);
-boardsRouter.delete("/task/:id", auth, deleteTask); */
-
-/* boardsRouter.put("/task/:id", auth, updateTask);
-boardsRouter.put("/subtask/:id", auth, updateSubtask); */
-
 module.exports = boardsRouter;

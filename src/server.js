@@ -6,7 +6,8 @@ const PORT = 8000;
 
 const app = require("./app");
 
-const MONGO_URL = process.env.MONGO_URL;
+const MONGO_URL =
+  "mongodb+srv://Sebastien:gaMFr9NQSXWsRPj0@kanban.9fqibds.mongodb.net/?retryWrites=true&w=majority";
 
 const server = http.createServer(app);
 

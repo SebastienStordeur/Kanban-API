@@ -97,31 +97,35 @@ async function httpUpdateBoard(req, res) {
     const userId = authServiceResponse.id;
     const boardId = req.body.id;
     const columns = req.body.columns;
+    console.log(columns[0].id);
 
-    await Board.findOne({ _id: boardId })
-      .then(async (board) => {
-        if (board.userId === userId) {
-          const session = await mongoose.startSession();
+    const board = await Board.findOne({ _id: boardId });
 
-          await session.withTransaction(async () => {
-            await Board.updateOne({ _id: boardId }, { title: req.body.title });
-            await Board.findOneAndUpdate(
-              { _id: boardId },
-              { columns: [...columns] },
-              { new: true, upsert: true }
-            );
-            return res.status(200).json({ msg: "OK" });
-          });
-          session.endSession();
-        } else {
-          return res
-            .status(403)
-            .json({ status: 403, error: "Forbidden access", err });
-        }
-      })
-      .catch((err) => {
-        return res.status(500).json(err);
-      });
+    if (board.userId !== userId) {
+      return res.status(403).json({ status: 403, error: "Forbidden access" });
+    }
+    const session = await mongoose.startSession();
+
+    await session.withTransaction(async () => {
+      await Board.updateOne({ _id: boardId }, { title: req.body.title });
+
+      for (let column of columns) {
+        await Board.findOneAndUpdate(
+          {
+            "columns._id": column.id,
+          },
+          {
+            $set: {
+              "columns.$.title": column.title,
+            },
+          },
+          { new: true, upsert: true }
+        );
+      }
+
+      return res.status(200).json({ msg: "OK" });
+    });
+    session.endSession();
   } catch (err) {
     console.error("ERROR", err);
   }
