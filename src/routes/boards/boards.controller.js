@@ -5,7 +5,6 @@ const {
 } = require("../../services/validations/createBoard.validation");
 
 const Board = require("../../models/boards/boards.mongo");
-const { default: mongoose } = require("mongoose");
 
 async function httpCreateBoard(req, res) {
   try {
@@ -97,37 +96,30 @@ async function httpUpdateBoard(req, res) {
     const userId = authServiceResponse.id;
     const boardId = req.body.id;
     const columns = req.body.columns;
-    console.log(columns[0].id);
-
     const board = await Board.findOne({ _id: boardId });
 
     if (board.userId !== userId) {
       return res.status(403).json({ status: 403, error: "Forbidden access" });
     }
-    const session = await mongoose.startSession();
 
-    await session.withTransaction(async () => {
-      await Board.updateOne({ _id: boardId }, { title: req.body.title });
-
-      for (let column of columns) {
-        await Board.findOneAndUpdate(
-          {
-            "columns._id": column.id,
-          },
-          {
-            $set: {
-              "columns.$.title": column.title,
-            },
-          },
-          { new: true, upsert: true }
-        );
-      }
-
-      return res.status(200).json({ msg: "OK" });
-    });
-    session.endSession();
+    await Board.updateOne(
+      { _id: boardId },
+      {
+        $set: {
+          title: req.body.title,
+          columns: columns,
+        },
+      },
+      { upsert: true, new: true }
+    )
+      .then((response) => {
+        return res.status(200).json({ status: 200, response });
+      })
+      .catch((err) => {
+        return res.status(500).json({ status: 500, err });
+      });
   } catch (err) {
-    console.error("ERROR", err);
+    throw new Error(err);
   }
 }
 
