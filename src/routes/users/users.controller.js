@@ -69,18 +69,7 @@ async function httpLogin(req, res) {
   }
 }
 
-async function httpGetProfile(req, res) {
-  const token = req.headers.authorization.split(" ")[1];
-  const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
-  const userId = decodedToken.userId;
-
-  await prisma.user.findUnique({ where: { id: userId } }).then((response) => {
-    res.status(200).json(token);
-  });
-}
-
 module.exports = {
   httpSignup,
   httpLogin,
-  httpGetProfile,
 };

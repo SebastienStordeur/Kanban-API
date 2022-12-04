@@ -4,22 +4,26 @@ const {
 } = require("../../services/validations/createSubtask.validation");
 
 const Board = require("../../models/boards/boards.mongo");
-
 const mongoose = require("mongoose");
 
 async function httpCreateTask(req, res) {
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
-
+    const boardId = req.body.id;
     const task = req.body.task;
+    const board = await Board.findById(boardId);
 
-    await Board.updateOne({ _id: req.body.id }, { $push: { tasks: task } })
+    if (board.userId !== userId) {
+      return res.status(403).json({ status: 403, error: "Forbidden Access" });
+    }
+
+    await Board.updateOne({ _id: boardId }, { $push: { tasks: task } })
       .then(() => {
         return res.status(200).json({ status: 200, success: true });
       })
       .catch((err) => {
-        return res.status(500).json({ status: 500, err });
+        return res.status(500).json({ status: 500, success: false, err });
       });
   } catch (err) {
     throw new Error(err);
@@ -44,7 +48,6 @@ async function httpDeleteTask(req, res) {
 }
 
 async function httpUpdateTask(req, res) {
-  console.log(req.body);
   try {
     const subtasks = req.body.task.subtasks;
     const session = await mongoose.startSession();

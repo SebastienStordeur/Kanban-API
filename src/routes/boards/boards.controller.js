@@ -72,19 +72,22 @@ async function httpDeleteBoard(req, res) {
     const userId = authServiceResponse.id;
     const board = await Board.findById(boardId);
 
-    if (board.userId === userId) {
-      await board
-        .deleteOne({ _id: boardId })
-        .then(() => {
-          return res.status(200).json({ status: 200, success: true });
-        })
-        .catch(() => {
-          return res.status(500).json({
-            status: 500,
-            error: "We couldn't delete this board. Try again later.",
-          });
-        });
+    if (board.userId !== userId) {
+      return res.status(403).json({ status: 403, error: "Forbidden access" });
     }
+
+    await board
+      .deleteOne({ _id: boardId })
+      .then(() => {
+        return res.status(200).json({ status: 200, success: true });
+      })
+      .catch(() => {
+        return res.status(500).json({
+          status: 500,
+          error: "We couldn't delete this board. Try again later.",
+          success: false,
+        });
+      });
   } catch (err) {
     throw new Error(err);
   }
@@ -95,6 +98,7 @@ async function httpUpdateBoard(req, res) {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
     const boardId = req.body.id;
+    const title = req.body.title;
     const columns = req.body.columns;
     const board = await Board.findOne({ _id: boardId });
 
@@ -102,14 +106,13 @@ async function httpUpdateBoard(req, res) {
       return res.status(403).json({ status: 403, error: "Forbidden access" });
     }
 
+    validationTitle(title, res);
+    //operation delete empty title col + tasks
+    //add transaction
+
     await Board.updateOne(
       { _id: boardId },
-      {
-        $set: {
-          title: req.body.title,
-          columns: columns,
-        },
-      },
+      { $set: { title, columns } },
       { upsert: true, new: true }
     )
       .then((response) => {
