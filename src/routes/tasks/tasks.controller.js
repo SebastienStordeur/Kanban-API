@@ -81,23 +81,35 @@ async function httpUpdateTask(req, res) {
 
 async function httpUpdateSubtask(req, res) {
   try {
-    /* await prisma.subTask
-      .update({
-        where: { id: req.body.id },
-        data: { isCompleted: req.body.isCompleted },
-      })
+    const authServiceResponse = await getId(req);
+    const userId = authServiceResponse.id;
+    const boardId = req.body.id;
+    const board = await Board.findOne({ _id: boardId });
+    const subtasks = req.body.subtasks;
+
+    if (board.userId !== userId) {
+      return res.status(403).json({ status: 403, error: "Forbidden access" });
+    }
+
+    /* 
+      TODO : Handle and delete empty subtasks before updating
+    */
+
+    await Board.updateOne(
+      { "tasks._id": req.body.id },
+      { $set: { "tasks.$[].subtasks": subtasks } }
+    )
       .then(() => {
-        return res.status(200).json({ message: "Subtask updated" });
+        return res
+          .status(200)
+          .json({ status: 200, message: "Subtask updated" });
       })
       .catch((err) => {
         return res.status(500).json({
           message:
             "Impossible to update this subtask for now. Try again later " + err,
         });
-      })
-      .finally(() => {
-        return prisma.$disconnect();
-      }); */
+      });
   } catch (err) {
     throw new Error(err);
   }

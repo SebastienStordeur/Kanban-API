@@ -12,7 +12,7 @@ const auth = require("../../middleware/Auth");
 
 tasksRouter.post("/", auth, httpCreateTask);
 tasksRouter.delete("/:id", auth, httpDeleteTask);
-tasksRouter.put("/:id", auth, httpUpdateTask);
-tasksRouter.put("/subtask/:id", auth, httpUpdateSubtask);
+/* tasksRouter.put("/:id", auth, httpUpdateTask); */
+tasksRouter.put("/subtasks", auth, httpUpdateSubtask);
 
 module.exports = tasksRouter;
