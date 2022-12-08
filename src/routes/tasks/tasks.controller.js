@@ -90,11 +90,11 @@ async function httpUpdateSubtask(req, res) {
     const board = await Board.findOne({ _id: boardId });
     const subtasks = req.body.subtasks;
 
-    if (board.userId !== userId) {
+    /*     if (board.userId !== userId) {
       return res.status(403).json({ status: 403, error: "Forbidden access" });
-    }
+    } */
 
-    /* 
+    /*  
       TODO : Handle and delete empty subtasks before updating
     */
 

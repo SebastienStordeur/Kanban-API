@@ -1,7 +1,6 @@
-function validationTitle(title, res) {
-  if (title.trim() === "") {
-    return res.status(500).json({ message: "Title can't be empty" });
-  }
+function validationTitle(title, error) {
+  title.trim() === "" ? (error = true) : (error = false);
+  return error;
 }
 
 function validationColumns(columns, array) {

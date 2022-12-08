@@ -10,9 +10,16 @@ async function httpCreateBoard(req, res) {
   try {
     const authServiceResponse = await getId(req);
     const userId = authServiceResponse.id;
+    const title = req.body.title;
     const columns = [];
+    let titleError = false;
 
-    validationTitle(req.body.title, res);
+    validationTitle(title, titleError);
+    if (titleError) {
+      return res
+        .status(500)
+        .json({ status: 500, message: "Title can't be empty" });
+    }
     validationColumns(req.body.columns, columns);
 
     const board = new Board({
